@@ -16,7 +16,7 @@ const detail = ref({
 
 onMounted(() => {
   console.log(`Mounted PostDetail for path ${props.path}`)
-  fetch(`src/posts/${props.path}/detail.json`)
+  fetch(`posts/${props.path}/detail.json`)
     .then((resp) => resp.json())
     .then((value) => {
       detail.value = value
