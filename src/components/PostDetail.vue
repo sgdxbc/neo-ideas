@@ -16,10 +16,11 @@ const detail = ref({
 
 onMounted(() => {
   console.log(`Mounted PostDetail for path ${props.path}`)
-  detail.value = {
-    title: "这是雪豹",
-    document: ["雪豹闭嘴。"]
-  }
+  fetch(`src/posts/${props.path}/detail.json`)
+    .then((resp) => resp.json())
+    .then((value) => {
+      detail.value = value
+    })
 })
 </script>
 
