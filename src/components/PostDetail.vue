@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, computed } from "vue"
+import { onMounted, computed, watchEffect } from "vue"
 import { DateTime } from "luxon"
 
 const props = defineProps({
@@ -30,14 +30,20 @@ onMounted(() => {
 
 const publishedAt = computed(() => DateTime.fromISO(overview.value.revisions.at(0)))
 const lastModifiedAt = computed(() => DateTime.fromISO(overview.value.revisions.at(-1)))
+
+watchEffect(() => {
+  if (overview.value && overview.value.title) {
+    document.title = overview.value.title + ' | Ideas (neo)'
+  }
+})
 </script>
 
 <template>
   <h1 v-if="overview && Object.hasOwn(overview, 'title')">{{ overview.title }}</h1>
   <div v-if="overview && Object.hasOwn(overview, 'revisions')">
-    {{ publishedAt.toISO() }}
+    {{ publishedAt.setLocale('zh').toLocaleString(DateTime.DATETIME_FULL) }}
     <span v-if="overview.revisions.length > 1">
-      （最近修订 {{ lastModifiedAt.toISO() }}）
+      （最近修订 {{ lastModifiedAt.setLocale('zh').toLocaleString(DateTime.DATETIME_FULL) }}）
     </span>
   </div>
   <hr>
