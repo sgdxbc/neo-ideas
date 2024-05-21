@@ -1,8 +1,12 @@
 <script setup>
-import { onMounted, computed } from "vue";
-import { DateTime } from "luxon";
+import { onMounted, computed } from "vue"
+import { DateTime } from "luxon"
 
 const props = defineProps({
+  category: {
+    type: Array,
+    required: true,
+  },
   path: {
     type: String,
     required: true,
@@ -11,28 +15,28 @@ const props = defineProps({
 
 import { ref } from 'vue'
 
+const overview = computed(() => props.category.find((post) => post.path == props.path) ?? null)
 const detail = ref({
   document: ["……"]
 })
 
 onMounted(() => {
-  console.log(`Mounted PostDetail for path ${props.path}`)
-  fetch(`posts/${props.path}/detail.json`)
-    .then((resp) => resp.json())
-    .then((value) => {
-      detail.value = value
-    })
+  console.log(`Mounted PostDetail for path ${props.path}`);
+  (async () => {
+    const resp = await fetch(`posts/${props.path}/current.json`)
+    detail.value = await resp.json()
+  })()
 })
 
-const publishedAt = computed(() => DateTime.fromISO(detail.value.revisions.at(0)))
-const lastModifiedAt = computed(() => DateTime.fromISO(detail.value.revisions.at(-1)))
+const publishedAt = computed(() => DateTime.fromISO(overview.value.revisions.at(0)))
+const lastModifiedAt = computed(() => DateTime.fromISO(overview.value.revisions.at(-1)))
 </script>
 
 <template>
-  <h1 v-if="Object.hasOwn(detail, 'title')">{{ detail.title }}</h1>
-  <div v-if="Object.hasOwn(detail, 'revisions')">
+  <h1 v-if="overview && Object.hasOwn(overview, 'title')">{{ overview.title }}</h1>
+  <div v-if="overview && Object.hasOwn(overview, 'revisions')">
     {{ publishedAt.toISO() }}
-    <span v-if="detail.revisions.length > 1">
+    <span v-if="overview.revisions.length > 1">
       （最近修订 {{ lastModifiedAt.toISO() }}）
     </span>
   </div>
