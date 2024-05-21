@@ -12,6 +12,7 @@
     "deploy": "npx gh-pages -d dist"
   },
   "dependencies": {
+    "luxon": "^3.4.4",
     "vue": "^3.4.21"
   },
   "devDependencies": {
