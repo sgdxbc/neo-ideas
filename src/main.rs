@@ -415,6 +415,7 @@ body {
     min-height: 100vh;
     display: flex;
     flex-flow: column;
+    overflow-x: hidden;
 }
 .fira-sans-thin {
     font-family: "Fira Sans", sans-serif;
@@ -428,7 +429,7 @@ body {
     padding: 1em 2em;
     position: relative;
     font-family: Georgia, "Nimbus Roman No9 L", "Songti SC", "Noto Serif CJK SC", "Source Han Serif SC", "Source Han Serif CN", STSong, "AR PL New Sung", "AR PL SungtiL GB", NSimSun, SimSun, "TW\-Sung", "WenQuanYi Bitmap Song", "AR PL UMing CN", "AR PL UMing HK", "AR PL UMing TW", "AR PL UMing TW MBE", PMingLiU, MingLiU, serif;
-    font-size: 1.2em;
+    font-size: 1.2rem;
 }
 .note.current {
     outline: 1px dashed;
