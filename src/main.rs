@@ -408,6 +408,9 @@ fn render(site: &Site, site_url: &str) -> anyhow::Result<()> {
             &format!("@{}", note.id)
         };
         let style = r#"
+html, body {
+    overflow-x: hidden;
+}
 body {
     max-width: 1280px;
     margin: 0 auto;
@@ -415,7 +418,6 @@ body {
     min-height: 100vh;
     display: flex;
     flex-flow: column;
-    overflow-x: hidden;
 }
 .fira-sans-thin {
     font-family: "Fira Sans", sans-serif;
