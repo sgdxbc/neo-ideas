@@ -2,12 +2,16 @@ use std::{
     collections::HashMap,
     env::args,
     fmt::Display,
+    fmt::Write,
     fs::{create_dir_all, read_dir, read_to_string, write},
+    hash::BuildHasher,
+    hash::RandomState,
     io::ErrorKind,
     path::{Path, PathBuf},
     str::FromStr,
 };
 
+use anyhow::Context as _;
 use chrono::{DateTime, FixedOffset, Local};
 use derive_more::{Deref, DerefMut};
 use petgraph::{
@@ -22,6 +26,8 @@ struct Site {
     notes: DiGraph<Note, Connection>,
     note_indexes: HashMap<NoteId, NodeIndex>,
     top_levels: Vec<NoteId>,
+    #[serde(skip)]
+    random_state: RandomState,
 }
 
 type NoteId = u32;
@@ -39,7 +45,7 @@ struct Note {
 #[derive(Serialize, Deserialize, Clone)]
 enum NoteContent {
     PlainText(Vec<String>),
-    Asset(PathBuf),
+    Image(PathBuf),
 }
 
 #[derive(Serialize, Deserialize)]
@@ -90,6 +96,7 @@ impl FromStr for ConnectedNote {
                 _ => anyhow::bail!("unrecognized record `{line}`"),
             }
         }
+        // TODO type
         let content = NoteContent::PlainText(
             lines
                 .filter_map(|line| {
@@ -151,9 +158,9 @@ impl Display for ConnectedNote {
                     writeln!(f, "{paragraph}")?
                 }
             }
-            NoteContent::Asset(path) => {
+            NoteContent::Image(path) => {
                 writeln!(f, "type")?;
-                writeln!(f, "asset")?;
+                writeln!(f, "image")?;
                 writeln!(f, "path")?;
                 writeln!(f, "{}", path.display())?
             }
@@ -205,6 +212,67 @@ impl Site {
             parent_id,
             previous_ids,
         }
+    }
+
+    fn render_single(&self, id: NoteId, current: bool) -> String {
+        let note = &self.notes[self.note_indexes[&id]];
+        let background_hue = self.random_state.hash_one(id) % 360;
+
+        let id = format!(r#"<div class="note-id"><small>#{id}</small></div>"#);
+        let title = if let Some(title) = &note.title {
+            format!("<p><h1>{title}</h1></p>")
+        } else {
+            Default::default()
+        };
+        let timestamps = format!(
+            r#"<p style="color: gray">{}</p>"#,
+            note.create_at.to_rfc2822()
+        );
+        let style = format!(
+            r#"
+            background: hsl({background_hue} 100 95);
+            "#
+        );
+        let content = match &note.content {
+            NoteContent::PlainText(paragraphs) => {
+                paragraphs.iter().fold(String::new(), |mut s, paragraph| {
+                    let _ = write!(s, "<p>{paragraph}</p>"); // clippy says i can ignore error
+                    s
+                })
+            }
+            NoteContent::Image(path) => format!(r#"<img src="{}">"#, path.display()),
+        };
+        format!(
+            r#"
+            <div class="note {}" style="{style}">
+                {id}
+                {title}
+                {timestamps}
+                <hr>
+                {content}
+            </div>
+            "#,
+            if current { "current" } else { "child" }
+        )
+    }
+
+    fn render(&self, id: NoteId) -> String {
+        let mut rendered = self.render_single(id, true);
+        for edge in self.notes.edges(self.note_indexes[&id]) {
+            if matches!(edge.weight(), Connection::Own) {
+                let note = &self.notes[edge.target()];
+                rendered += &format!(
+                    r#"<a href=/{} style="color: inherit; text-decoration: inherit;">{}</a>"#,
+                    if let Some(alternative) = &note.alternative {
+                        alternative.into()
+                    } else {
+                        note.id.to_string()
+                    },
+                    self.render_single(note.id, false)
+                )
+            }
+        }
+        rendered
     }
 }
 
@@ -296,6 +364,76 @@ fn update_note(site: &Site, key: &str) -> anyhow::Result<()> {
     Ok(())
 }
 
+fn render(site: &Site) -> anyhow::Result<()> {
+    let path = Path::new("target/web");
+    create_dir_all(path)?;
+    for note in site.notes.node_weights() {
+        let title = if let Some(title) = &note.title {
+            title
+        } else {
+            &format!("@{}", note.id)
+        };
+        let style = r#"
+            body {
+                max-width: 1280px;
+                margin: 0 auto;
+            }
+            .note {
+                margin: 1em;
+                border: 2px solid;
+                border-radius: 20px;
+                padding: 1em 2em;
+                position: relative;
+            }
+            .note.current {
+                outline: 1px dashed;
+                outline-offset: -5px;
+                padding: calc(1em - 5px) calc(2em - 5px);
+            }
+            .note.child {
+                margin-left: 2em;
+                border-color: gray;
+            }
+            .note-id {
+                position: absolute;
+                top: 1em;
+                right: 1em;
+            }
+            .note h1 {
+                margin: 0;
+            }
+            .note hr {
+                border-color: lightgray;
+            }
+        "#;
+        let rendered = format!(
+            r#"
+<html lang="zh-CN">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="UTF-8">
+    <title>{title} - NeoIdeas</title>
+        <style>{style}</style>
+</head>
+<body>
+    {}
+</body>
+</html>
+            "#,
+            site.render(note.id)
+        );
+        if let Some(alternative) = &note.alternative {
+            let path = path.join(alternative);
+            create_dir_all(&path).context(path.display().to_string())?;
+            write(path.join("index.html"), &rendered)?
+        }
+        let path = path.join(note.id.to_string());
+        create_dir_all(&path).context(path.display().to_string())?;
+        write(path.join("index.html"), rendered)?;
+    }
+    Ok(())
+}
+
 fn main() -> anyhow::Result<()> {
     let site = index()?;
     println!(
@@ -313,6 +451,7 @@ fn main() -> anyhow::Result<()> {
             &site,
             &key.ok_or(anyhow::format_err!("missing note argument"))?,
         ),
+        "render" => render(&site),
         _ => anyhow::bail!("unrecognized command `{command}`"),
     }
 }
