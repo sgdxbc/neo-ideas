@@ -445,8 +445,13 @@ body {
     padding: calc(1em - 5px) calc(2em - 5px);
 }
 .note.child {
-    margin-left: 2em;
+    margin-left: 15px;
     border-color: gray;
+}
+@media (min-width: 768px) {
+    .note.child {
+        margin: 2em;
+    }
 }
 .note-id {
     position: absolute;
