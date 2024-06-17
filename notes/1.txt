@@ -1,7 +1,7 @@
 id
 1
 title
-The First Testing Note
+第一张测试卡片
 create
 2024-06-17T13:53:47.184516753+08:00
 update
@@ -9,6 +9,6 @@ update
 update
 2024-06-17T15:14:01.834415643+08:00
 
-This is the first edit.
+这是第一次编辑。
 
-This is the second edit.
+然后是第二次。

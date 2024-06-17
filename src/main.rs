@@ -12,7 +12,7 @@ use std::{
 };
 
 use anyhow::Context as _;
-use chrono::{DateTime, FixedOffset, Local};
+use chrono::{DateTime, FixedOffset, Local, Utc};
 use derive_more::{Deref, DerefMut};
 use petgraph::{
     graph::{DiGraph, NodeIndex},
@@ -214,11 +214,10 @@ impl Site {
         }
     }
 
-    fn render_single(&self, id: NoteId, current: bool) -> String {
-        let note = &self.notes[self.note_indexes[&id]];
-        let background_hue = self.random_state.hash_one(id) % 360;
+    fn render_single(&self, note: &Note, current: bool) -> String {
+        let background_hue = self.random_state.hash_one(note.id) % 360;
 
-        let id = format!(r#"<div class="note-id"><small>#{id}</small></div>"#);
+        let id = format!(r#"<div class="note-id"><small>#{}</small></div>"#, note.id);
         let title = if let Some(title) = &note.title {
             format!("<p><h1>{title}</h1></p>")
         } else {
@@ -230,7 +229,7 @@ impl Site {
         );
         let style = format!(
             r#"
-            background: hsl({background_hue} 100 95);
+            background: hsla({background_hue} 100 99 / 0.8);
             "#
         );
         let content = match &note.content {
@@ -256,21 +255,30 @@ impl Site {
         )
     }
 
-    fn render(&self, id: NoteId) -> String {
-        let mut rendered = self.render_single(id, true);
-        for edge in self.notes.edges(self.note_indexes[&id]) {
-            if matches!(edge.weight(), Connection::Own) {
-                let note = &self.notes[edge.target()];
-                rendered += &format!(
-                    r#"<a href=/{} style="color: inherit; text-decoration: inherit;">{}</a>"#,
-                    if let Some(alternative) = &note.alternative {
-                        alternative.into()
-                    } else {
-                        note.id.to_string()
-                    },
-                    self.render_single(note.id, false)
-                )
-            }
+    fn render(&self, note: &Note) -> String {
+        let mut rendered = self.render_single(note, true);
+        let mut owned_indexes = self
+            .notes
+            .edges(self.note_indexes[&note.id])
+            .filter_map(|edge| {
+                if matches!(edge.weight(), Connection::Own) {
+                    Some(edge.target())
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<_>>();
+        owned_indexes.sort_unstable_by_key(|index| self.notes[*index].create_at);
+        for index in owned_indexes {
+            rendered += &format!(
+                r#"<a href=/{} style="color: inherit; text-decoration: inherit;">{}</a>"#,
+                if let Some(alternative) = &note.alternative {
+                    alternative.into()
+                } else {
+                    note.id.to_string()
+                },
+                self.render_single(&self.notes[index], false)
+            )
         }
         rendered
     }
@@ -374,38 +382,52 @@ fn render(site: &Site) -> anyhow::Result<()> {
             &format!("@{}", note.id)
         };
         let style = r#"
-            body {
-                max-width: 1280px;
-                margin: 0 auto;
-            }
-            .note {
-                margin: 1em;
-                border: 2px solid;
-                border-radius: 20px;
-                padding: 1em 2em;
-                position: relative;
-            }
-            .note.current {
-                outline: 1px dashed;
-                outline-offset: -5px;
-                padding: calc(1em - 5px) calc(2em - 5px);
-            }
-            .note.child {
-                margin-left: 2em;
-                border-color: gray;
-            }
-            .note-id {
-                position: absolute;
-                top: 1em;
-                right: 1em;
-            }
-            .note h1 {
-                margin: 0;
-            }
-            .note hr {
-                border-color: lightgray;
-            }
+body {
+    max-width: 1280px;
+    margin: 0 auto;
+    background: ghostwhite;
+    min-height: 100vh;
+    display: flex;
+    flex-flow: column;
+}
+.fira-sans-thin {
+    font-family: "Fira Sans", sans-serif;
+    font-weight: 100;
+    font-style: normal;
+}
+.note {
+    margin: 0.5em 1em;
+    border: 2px solid;
+    border-radius: 20px;
+    padding: 1em 2em;
+    position: relative;
+}
+.note.current {
+    outline: 1px dashed;
+    outline-offset: -5px;
+    padding: calc(1em - 5px) calc(2em - 5px);
+}
+.note.child {
+    margin-left: 2em;
+    border-color: gray;
+}
+.note-id {
+    position: absolute;
+    top: 1em;
+    right: 1em;
+}
+.note h1 {
+    margin: 0;
+}
+.note hr {
+    border-color: lightgray;
+}
         "#;
+        let footer = format!(
+            include_str!("footer.txt"),
+            now = Utc::now(),
+            seed = site.random_state.hash_one(0)
+        );
         let rendered = format!(
             r#"
 <html lang="zh-CN">
@@ -413,14 +435,28 @@ fn render(site: &Site) -> anyhow::Result<()> {
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta charset="UTF-8">
     <title>{title} - NeoIdeas</title>
-        <style>{style}</style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@100&display=swap" rel="stylesheet">
+    <style>{style}</style>
 </head>
 <body>
+    <div class="fira-sans-thin" style="
+        position: sticky;
+        top: 0;
+        font-size: min(28vw, 20vh);
+        font-weight: 100;
+        overflow-x: hidden;
+        align-self: flex-start;
+    ">
+        N<small>EO</small>I<small>DEAS</small>
+    </div>
     {}
+    {footer}
 </body>
 </html>
             "#,
-            site.render(note.id)
+            site.render(note)
         );
         if let Some(alternative) = &note.alternative {
             let path = path.join(alternative);
