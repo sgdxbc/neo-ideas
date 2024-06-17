@@ -10,18 +10,23 @@ use std::{
 
 use chrono::{DateTime, FixedOffset, Local};
 use derive_more::{Deref, DerefMut};
-use petgraph::graph::DiGraph;
+use petgraph::{
+    graph::{DiGraph, NodeIndex},
+    visit::EdgeRef,
+    Direction::Incoming,
+};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Default)]
 struct Site {
     notes: DiGraph<Note, Connection>,
+    note_indexes: HashMap<NoteId, NodeIndex>,
     top_levels: Vec<NoteId>,
 }
 
 type NoteId = u32;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 struct Note {
     id: NoteId,
     alternative: Option<String>,
@@ -31,7 +36,7 @@ struct Note {
     content: NoteContent,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 enum NoteContent {
     PlainText(Vec<String>),
     Asset(PathBuf),
@@ -161,6 +166,46 @@ impl Site {
     fn new() -> Self {
         Self::default()
     }
+
+    fn find(&self, key: &str) -> anyhow::Result<&Note> {
+        let parent_note = if let Some(id) = key.strip_prefix('@') {
+            let id = id.parse::<NoteId>()?;
+            self.notes.node_weights().find(|note| note.id == id)
+        } else {
+            self.notes
+                .node_weights()
+                .find(|note| note.alternative.as_deref() == Some(key))
+        }
+        .ok_or(anyhow::format_err!("note `{key}` not found"))?;
+        Ok(parent_note)
+    }
+
+    fn make_connected(&self, id: NoteId) -> ConnectedNote {
+        let index = self.note_indexes[&id];
+        let parent_id = self.notes.edges_directed(index, Incoming).find_map(|edge| {
+            if matches!(edge.weight(), Connection::Own) {
+                Some(self.notes[edge.source()].id)
+            } else {
+                None
+            }
+        });
+        let previous_ids = self
+            .notes
+            .edges_directed(index, Incoming)
+            .filter_map(|edge| {
+                if matches!(edge.weight(), Connection::Cause) {
+                    Some(self.notes[edge.source()].id)
+                } else {
+                    None
+                }
+            })
+            .collect();
+        ConnectedNote {
+            inner: self.notes[index].clone(),
+            parent_id,
+            previous_ids,
+        }
+    }
 }
 
 const NOTES_DIR: &str = "notes";
@@ -172,7 +217,6 @@ fn index() -> anyhow::Result<Site> {
         Err(err) if err.kind() == ErrorKind::NotFound => return Ok(site),
         err => err?,
     };
-    let mut note_indexes = HashMap::new();
     let mut note_parents = HashMap::new();
     let mut note_previous = HashMap::new();
     for entry in read_dir {
@@ -180,7 +224,7 @@ fn index() -> anyhow::Result<Site> {
         let note = read_to_string(path)?.parse::<ConnectedNote>()?;
         let note_id = note.id;
         let index = site.notes.add_node(note.inner);
-        note_indexes.insert(note_id, index);
+        site.note_indexes.insert(note_id, index);
         if let Some(parent_id) = note.parent_id {
             note_parents.insert(note_id, parent_id);
         }
@@ -190,15 +234,18 @@ fn index() -> anyhow::Result<Site> {
     }
     for (note_id, parent_id) in note_parents {
         site.notes.add_edge(
-            note_indexes[&parent_id],
-            note_indexes[&note_id],
+            site.note_indexes[&parent_id],
+            site.note_indexes[&note_id],
             Connection::Own,
         );
     }
     for (note_id, previous_ids) in note_previous {
         for id in previous_ids {
-            site.notes
-                .add_edge(note_indexes[&id], note_indexes[&note_id], Connection::Cause);
+            site.notes.add_edge(
+                site.note_indexes[&id],
+                site.note_indexes[&note_id],
+                Connection::Cause,
+            );
         }
     }
     Ok(site)
@@ -215,7 +262,7 @@ fn new_note(site: &Site, belongs_to: Option<&str>) -> anyhow::Result<()> {
     let note = Note {
         id,
         alternative: None,
-        create_at: Local::now().fixed_offset(),
+        create_at: Local::now().into(),
         update_at: Default::default(),
         title: None,
         content: NoteContent::PlainText(Default::default()),
@@ -226,18 +273,21 @@ fn new_note(site: &Site, belongs_to: Option<&str>) -> anyhow::Result<()> {
         previous_ids: Default::default(),
     };
     if let Some(belongs_to) = belongs_to {
-        let parent_note = if let Some(id) = belongs_to.strip_prefix('@') {
-            let id = id.parse::<NoteId>()?;
-            site.notes.node_weights().find(|note| note.id == id)
-        } else {
-            site.notes
-                .node_weights()
-                .find(|note| note.alternative.as_deref() == Some(belongs_to))
-        }
-        .ok_or(anyhow::format_err!("note `{belongs_to}` not found"))?;
-        note.parent_id = Some(parent_note.id)
+        note.parent_id = Some(site.find(belongs_to)?.id)
     }
 
+    let path = Path::new(NOTES_DIR);
+    create_dir_all(path)?;
+    let path = path.join(format!("{id}.txt"));
+    write(&path, note.to_string())?;
+    println!("{}", path.display());
+    Ok(())
+}
+
+fn update_note(site: &Site, key: &str) -> anyhow::Result<()> {
+    let id = site.find(key)?.id;
+    let mut note = site.make_connected(id);
+    note.update_at.push(Local::now().into());
     let path = Path::new(NOTES_DIR);
     create_dir_all(path)?;
     let path = path.join(format!("{id}.txt"));
@@ -256,8 +306,13 @@ fn main() -> anyhow::Result<()> {
     let Some(command) = args().nth(1) else {
         return Ok(());
     };
+    let key = args().nth(2);
     match &*command {
-        "new" => new_note(&site, args().nth(2).as_deref()),
+        "new" => new_note(&site, key.as_deref()),
+        "update" => update_note(
+            &site,
+            &key.ok_or(anyhow::format_err!("missing note argument"))?,
+        ),
         _ => anyhow::bail!("unrecognized command `{command}`"),
     }
 }
