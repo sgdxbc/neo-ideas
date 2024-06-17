@@ -12,7 +12,7 @@ use std::{
 };
 
 use anyhow::Context as _;
-use chrono::{DateTime, FixedOffset, Local, Utc};
+use chrono::{DateTime, FixedOffset, Local, Locale::zh_CN, Utc};
 use derive_more::{Deref, DerefMut};
 use petgraph::{
     graph::{DiGraph, NodeIndex},
@@ -223,9 +223,16 @@ impl Site {
         } else {
             Default::default()
         };
+        let create_at = note.create_at.format_localized("%c %z", zh_CN);
+        let update_at = note
+            .update_at
+            .iter()
+            .max()
+            .map(|at| format!(" / {}", at.format_localized("%c %z", zh_CN)))
+            .unwrap_or_default();
         let timestamps = format!(
-            r#"<p style="color: gray">{}</p>"#,
-            note.create_at.to_rfc2822()
+            r#"<p style="color: gray">{create_at}{update_at}</p>"#,
+            // note.create_at.to_rfc2822()
         );
         let style = format!(
             r#"
@@ -270,14 +277,15 @@ impl Site {
             .collect::<Vec<_>>();
         owned_indexes.sort_unstable_by_key(|index| self.notes[*index].create_at);
         for index in owned_indexes {
+            let note = &self.notes[index];
             rendered += &format!(
-                r#"<a href=/{} style="color: inherit; text-decoration: inherit;">{}</a>"#,
+                r#"<a href=/{SITE_URL}/{} style="color: inherit; text-decoration: inherit;">{}</a>"#,
                 if let Some(alternative) = &note.alternative {
                     alternative.into()
                 } else {
                     note.id.to_string()
                 },
-                self.render_single(&self.notes[index], false)
+                self.render_single(note, false)
             )
         }
         rendered
@@ -372,9 +380,11 @@ fn update_note(site: &Site, key: &str) -> anyhow::Result<()> {
     Ok(())
 }
 
+const SITE_URL: &str = "neo-ideas";
+
 fn render(site: &Site) -> anyhow::Result<()> {
-    let path = Path::new("target/web");
-    create_dir_all(path)?;
+    let path = Path::new("target/web").join(SITE_URL);
+    create_dir_all(&path)?;
     for note in site.notes.node_weights() {
         let title = if let Some(title) = &note.title {
             title

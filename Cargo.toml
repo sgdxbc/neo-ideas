@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = { version = "1.0.86", features = ["backtrace"] }
-chrono = { version = "0.4.38", features = ["serde"] }
+chrono = { version = "0.4.38", features = ["serde", "unstable-locales"] }
 derive_more = "0.99.18"
 petgraph = { version = "0.6.5", features = ["serde-1"] }
 serde = { version = "1.0.203", features = ["derive"] }
