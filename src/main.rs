@@ -409,7 +409,7 @@ fn render(site: &Site, site_url: &str) -> anyhow::Result<()> {
         };
         let style = r#"
 html, body {
-    overflow-x: hidden;
+    overflow-x: clip;
 }
 body {
     max-width: 1280px;
@@ -425,13 +425,19 @@ body {
     font-style: normal;
 }
 .note {
-    margin: 0.5em 1em;
+    margin: 5px 10px;
     border: 2px solid;
+    padding: 5px 10px;
     border-radius: 20px;
-    padding: 1em 2em;
     position: relative;
     font-family: Georgia, "Nimbus Roman No9 L", "Songti SC", "Noto Serif CJK SC", "Source Han Serif SC", "Source Han Serif CN", STSong, "AR PL New Sung", "AR PL SungtiL GB", NSimSun, SimSun, "TW\-Sung", "WenQuanYi Bitmap Song", "AR PL UMing CN", "AR PL UMing HK", "AR PL UMing TW", "AR PL UMing TW MBE", PMingLiU, MingLiU, serif;
-    font-size: 1.2rem;
+}
+@media (min-width: 768px) {
+    .note {
+        margin: 0.5em 1em;
+        padding: 1em 2em;
+        font-size: 1.2rem;
+    }
 }
 .note.current {
     outline: 1px dashed;
@@ -488,7 +494,6 @@ body {
         top: 0;
         font-size: min(28vw, 20vh);
         font-weight: 100;
-        overflow-x: hidden;
         align-self: flex-start;
         color: inherit;
         text-decoration: inherit;
