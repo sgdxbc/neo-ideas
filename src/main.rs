@@ -1,13 +1,14 @@
 use std::{
     collections::HashMap,
+    env::args,
     fmt::Display,
-    fs::{read_dir, read_to_string},
+    fs::{create_dir_all, read_dir, read_to_string, write},
     io::ErrorKind,
     path::{Path, PathBuf},
     str::FromStr,
 };
 
-use chrono::{DateTime, FixedOffset};
+use chrono::{DateTime, FixedOffset, Local};
 use derive_more::{Deref, DerefMut};
 use petgraph::graph::DiGraph;
 use serde::{Deserialize, Serialize};
@@ -38,7 +39,7 @@ enum NoteContent {
 
 #[derive(Serialize, Deserialize)]
 enum Connection {
-    Include,
+    Own,
     Cause,
 }
 
@@ -162,10 +163,11 @@ impl Site {
     }
 }
 
+const NOTES_DIR: &str = "notes";
+
 fn index() -> anyhow::Result<Site> {
-    let path = Path::new("notes");
     let mut site = Site::new();
-    let read_dir = match read_dir(path) {
+    let read_dir = match read_dir(Path::new(NOTES_DIR)) {
         Ok(read_dir) => read_dir,
         Err(err) if err.kind() == ErrorKind::NotFound => return Ok(site),
         err => err?,
@@ -190,7 +192,7 @@ fn index() -> anyhow::Result<Site> {
         site.notes.add_edge(
             note_indexes[&parent_id],
             note_indexes[&note_id],
-            Connection::Include,
+            Connection::Own,
         );
     }
     for (note_id, previous_ids) in note_previous {
@@ -202,6 +204,48 @@ fn index() -> anyhow::Result<Site> {
     Ok(site)
 }
 
+fn new_note(site: &Site, belongs_to: Option<&str>) -> anyhow::Result<()> {
+    let id = site
+        .notes
+        .node_weights()
+        .map(|note| note.id)
+        .max()
+        .unwrap_or_default()
+        + 1;
+    let note = Note {
+        id,
+        alternative: None,
+        create_at: Local::now().fixed_offset(),
+        update_at: Default::default(),
+        title: None,
+        content: NoteContent::PlainText(Default::default()),
+    };
+    let mut note = ConnectedNote {
+        inner: note,
+        parent_id: None,
+        previous_ids: Default::default(),
+    };
+    if let Some(belongs_to) = belongs_to {
+        let parent_note = if let Some(id) = belongs_to.strip_prefix('@') {
+            let id = id.parse::<NoteId>()?;
+            site.notes.node_weights().find(|note| note.id == id)
+        } else {
+            site.notes
+                .node_weights()
+                .find(|note| note.alternative.as_deref() == Some(belongs_to))
+        }
+        .ok_or(anyhow::format_err!("note `{belongs_to}` not found"))?;
+        note.parent_id = Some(parent_note.id)
+    }
+
+    let path = Path::new(NOTES_DIR);
+    create_dir_all(path)?;
+    let path = path.join(format!("{id}.txt"));
+    write(&path, note.to_string())?;
+    println!("{}", path.display());
+    Ok(())
+}
+
 fn main() -> anyhow::Result<()> {
     let site = index()?;
     println!(
@@ -209,5 +253,11 @@ fn main() -> anyhow::Result<()> {
         site.notes.node_count(),
         site.notes.edge_count()
     );
-    Ok(())
+    let Some(command) = args().nth(1) else {
+        return Ok(());
+    };
+    match &*command {
+        "new" => new_note(&site, args().nth(2).as_deref()),
+        _ => anyhow::bail!("unrecognized command `{command}`"),
+    }
 }
