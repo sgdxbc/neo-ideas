@@ -61,6 +61,7 @@ struct ConnectedNote {
     inner: Note,
     parent_id: Option<NoteId>,
     previous_ids: Vec<NoteId>,
+    top_level: bool,
 }
 
 impl FromStr for ConnectedNote {
@@ -72,14 +73,26 @@ impl FromStr for ConnectedNote {
         let mut create_at = None;
         let mut update_at = Vec::new();
         let mut title = None;
-        let mut parent = None;
-        let mut previous = Vec::new();
+        let mut parent_id = None;
+        let mut previous_ids = Vec::new();
+        let mut top_level = false;
 
         let mut lines = s.lines();
         while let Some(line) = lines.next() {
             let line = line.trim();
             if line.is_empty() {
                 break;
+            }
+            match line {
+                "top level" => {
+                    top_level = true;
+                    continue;
+                }
+                "image" => {
+                    // TODO
+                    continue;
+                }
+                _ => {}
             }
             let value = lines
                 .next()
@@ -91,8 +104,8 @@ impl FromStr for ConnectedNote {
                 "create" => create_at = Some(DateTime::parse_from_rfc3339(value)?),
                 "update" => update_at.push(DateTime::parse_from_rfc3339(value)?),
                 "title" => title = Some(value.into()),
-                "parent" => parent = Some(value.parse()?),
-                "previous" => previous.push(value.parse()?),
+                "parent" => parent_id = Some(value.parse()?),
+                "previous" => previous_ids.push(value.parse()?),
                 _ => anyhow::bail!("unrecognized record `{line}`"),
             }
         }
@@ -119,8 +132,9 @@ impl FromStr for ConnectedNote {
         };
         Ok(Self {
             inner: note,
-            parent_id: parent,
-            previous_ids: previous,
+            parent_id,
+            previous_ids,
+            top_level,
         })
     }
 }
@@ -128,6 +142,9 @@ impl FromStr for ConnectedNote {
 impl Display for ConnectedNote {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "id")?;
+        if self.top_level {
+            writeln!(f, "top level")?
+        }
         writeln!(f, "{}", self.id)?;
         if let Some(alternative) = &self.alternative {
             writeln!(f, "alternative")?;
@@ -159,9 +176,8 @@ impl Display for ConnectedNote {
                 }
             }
             NoteContent::Image(path) => {
-                writeln!(f, "type")?;
                 writeln!(f, "image")?;
-                writeln!(f, "path")?;
+                writeln!(f)?;
                 writeln!(f, "{}", path.display())?
             }
         }
@@ -211,11 +227,12 @@ impl Site {
             inner: self.notes[index].clone(),
             parent_id,
             previous_ids,
+            top_level: self.top_levels.contains(&id),
         }
     }
 
     fn render_single(&self, note: &Note, current: bool) -> String {
-        let background_hue = self.random_state.hash_one(note.id) % 360;
+        let background_hue = self.random_state.hash_one(note.id.to_string()) % 360;
 
         let id = format!(r#"<div class="note-id"><small>#{}</small></div>"#, note.id);
         let title = if let Some(title) = &note.title {
@@ -355,6 +372,7 @@ fn new_note(site: &Site, belongs_to: Option<&str>) -> anyhow::Result<()> {
         inner: note,
         parent_id: None,
         previous_ids: Default::default(),
+        top_level: false,
     };
     if let Some(belongs_to) = belongs_to {
         note.parent_id = Some(site.find(belongs_to)?.id)
@@ -451,16 +469,18 @@ body {
     <style>{style}</style>
 </head>
 <body>
-    <div class="fira-sans-thin" style="
+    <a href="/{SITE_URL}" class="fira-sans-thin" style="
         position: sticky;
         top: 0;
         font-size: min(28vw, 20vh);
         font-weight: 100;
         overflow-x: hidden;
         align-self: flex-start;
+        color: inherit;
+        text-decoration: inherit;
     ">
         N<small>EO</small>I<small>DEAS</small>
-    </div>
+    </a>
     {}
     {footer}
 </body>
