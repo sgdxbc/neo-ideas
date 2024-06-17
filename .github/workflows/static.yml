@@ -38,7 +38,7 @@ jobs:
           rustup update stable
       - name: Build artifact
         run: |
-          cargo run -- render
+          cargo run -- render /neo-ideas
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:

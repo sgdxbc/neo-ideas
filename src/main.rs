@@ -279,7 +279,7 @@ impl Site {
         )
     }
 
-    fn render(&self, note: &Note) -> String {
+    fn render(&self, note: &Note, site_url: &str) -> String {
         let mut rendered = self.render_single(note, true);
         let mut owned_indexes = self
             .notes
@@ -296,7 +296,7 @@ impl Site {
         for index in owned_indexes {
             let note = &self.notes[index];
             rendered += &format!(
-                r#"<a href=/{SITE_URL}/{} style="color: inherit; text-decoration: inherit;">{}</a>"#,
+                r#"<a href={site_url}/{} style="color: inherit; text-decoration: inherit;">{}</a>"#,
                 if let Some(alternative) = &note.alternative {
                     alternative.into()
                 } else {
@@ -398,10 +398,8 @@ fn update_note(site: &Site, key: &str) -> anyhow::Result<()> {
     Ok(())
 }
 
-const SITE_URL: &str = "neo-ideas";
-
-fn render(site: &Site) -> anyhow::Result<()> {
-    let path = Path::new("target/web").join(SITE_URL);
+fn render(site: &Site, site_url: &str) -> anyhow::Result<()> {
+    let path = Path::new("target/web");
     create_dir_all(&path)?;
     for note in site.notes.node_weights() {
         let title = if let Some(title) = &note.title {
@@ -482,7 +480,7 @@ body {
     <style>{style}</style>
 </head>
 <body>
-    <a href="/{SITE_URL}" class="fira-sans-thin" style="
+    <a href="{site_url}/" class="fira-sans-thin" style="
         position: sticky;
         top: 0;
         font-size: min(28vw, 20vh);
@@ -499,7 +497,7 @@ body {
 </body>
 </html>
             "#,
-            site.render(note)
+            site.render(note, site_url)
         );
         if let Some(alternative) = &note.alternative {
             let path = path.join(alternative);
@@ -523,14 +521,14 @@ fn main() -> anyhow::Result<()> {
     let Some(command) = args().nth(1) else {
         return Ok(());
     };
-    let key = args().nth(2);
+    let arg2 = args().nth(2);
     match &*command {
-        "new" => new_note(&site, key.as_deref()),
+        "new" => new_note(&site, arg2.as_deref()),
         "update" => update_note(
             &site,
-            &key.ok_or(anyhow::format_err!("missing note argument"))?,
+            &arg2.ok_or(anyhow::format_err!("missing note argument"))?,
         ),
-        "render" => render(&site),
+        "render" => render(&site, &arg2.unwrap_or_default()),
         _ => anyhow::bail!("unrecognized command `{command}`"),
     }
 }
