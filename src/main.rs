@@ -275,7 +275,7 @@ impl Site {
         };
         Ok(format!(
             r#"
-            <div class="note {}" style="background: hsla({background_hue} 100 99 / 0.8);">
+            <div class="note {}" style="background: hsl({background_hue} 100 99 / 0.8);">
                 {id}
                 {title}
                 {metadata}
