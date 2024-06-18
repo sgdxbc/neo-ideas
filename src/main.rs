@@ -265,7 +265,7 @@ impl Site {
             / u64::MAX as f64;
 
         let id = format!(
-            r#"<div class="note-id sans-serif"><small>{}</small></div>"#,
+            r#"<div class="note-id"><small>{}</small></div>"#,
             note.description(),
         );
         let title = note
@@ -301,7 +301,7 @@ impl Site {
         };
         let metadata = format!(
             r#"
-            <div class="metadata sans-serif">
+            <div class="metadata">
                 <p>{create_at}{update_at}</p>
                 {parent}
             </div>
@@ -321,7 +321,11 @@ impl Site {
                     create_dir_all(path)?
                 }
                 copy(Path::new(NOTES_DIR).join(path), target_path)?;
-                format!(r#"<img src="{site_url}/{}">"#, path.display())
+                format!(
+                    r#"<img alt="image by note {}" src="{site_url}/{}">"#,
+                    note.description(),
+                    path.display()
+                )
             }
         };
         let mut owned = Default::default();
