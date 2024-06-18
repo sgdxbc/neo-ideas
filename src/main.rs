@@ -1,11 +1,9 @@
 use std::{
     collections::HashMap,
     env::args,
-    fmt::Display,
-    fmt::Write,
-    fs::{create_dir_all, read_dir, read_to_string, write},
-    hash::BuildHasher,
-    hash::RandomState,
+    fmt::{Display, Write},
+    fs::{copy, create_dir_all, read_dir, read_to_string, write},
+    hash::{BuildHasher, RandomState},
     io::ErrorKind,
     path::{Path, PathBuf},
     str::FromStr,
@@ -231,7 +229,7 @@ impl Site {
         }
     }
 
-    fn render_single(&self, note: &Note, current: bool) -> String {
+    fn render_single(&self, note: &Note, current: bool, site_url: &str) -> anyhow::Result<String> {
         let background_hue = self.random_state.hash_one(note.id.to_string()) % 360;
 
         let id = format!(
@@ -243,11 +241,11 @@ impl Site {
                 Default::default()
             }
         );
-        let title = if let Some(title) = &note.title {
-            format!("<p><h1>{title}</h1></p>")
-        } else {
-            Default::default()
-        };
+        let title = note
+            .title
+            .as_ref()
+            .map(|title| format!("<h1>{title}</h1>"))
+            .unwrap_or_default();
         let create_at = note.create_at.format_localized("%c %z", zh_CN);
         let update_at = note
             .update_at
@@ -255,15 +253,7 @@ impl Site {
             .max()
             .map(|at| format!(" / {}", at.format_localized("%c %z", zh_CN)))
             .unwrap_or_default();
-        let timestamps = format!(
-            r#"<p class="metadata sans-serif">{create_at}{update_at}</p>"#,
-            // note.create_at.to_rfc2822()
-        );
-        let style = format!(
-            r#"
-            background: hsla({background_hue} 100 99 / 0.8);
-            "#
-        );
+        let metadata = format!(r#"<p class="metadata sans-serif">{create_at}{update_at}</p>"#);
         let content = match &note.content {
             NoteContent::PlainText(paragraphs) => {
                 paragraphs.iter().fold(String::new(), |mut s, paragraph| {
@@ -271,24 +261,31 @@ impl Site {
                     s
                 })
             }
-            NoteContent::Image(path) => format!(r#"<img src="{}">"#, path.display()),
+            NoteContent::Image(path) => {
+                let target_path = Path::new(RENDER_DIR).join(path);
+                if let Some(path) = target_path.parent() {
+                    create_dir_all(path)?
+                }
+                copy(Path::new(NOTES_DIR).join(path), target_path)?;
+                format!(r#"<img src="{site_url}/{}">"#, path.display())
+            }
         };
-        format!(
+        Ok(format!(
             r#"
-            <div class="note {}" style="{style}">
+            <div class="note {}" style="background: hsla({background_hue} 100 99 / 0.8);">
                 {id}
                 {title}
-                {timestamps}
+                {metadata}
                 <hr>
                 {content}
             </div>
             "#,
             if current { "current" } else { "child" }
-        )
+        ))
     }
 
-    fn render(&self, note: &Note, site_url: &str) -> String {
-        let mut rendered = self.render_single(note, true);
+    fn render(&self, note: &Note, site_url: &str) -> anyhow::Result<String> {
+        let mut rendered = self.render_single(note, true, site_url)?;
         let mut owned_indexes = self
             .notes
             .edges(self.note_indexes[&note.id])
@@ -310,10 +307,10 @@ impl Site {
                 } else {
                     note.id.to_string()
                 },
-                self.render_single(note, false)
+                self.render_single(note, false, site_url)?
             )
         }
-        rendered
+        Ok(rendered)
     }
 }
 
@@ -406,8 +403,10 @@ fn update_note(site: &Site, key: &str) -> anyhow::Result<()> {
     Ok(())
 }
 
+const RENDER_DIR: &str = "target/web";
+
 fn render(site: &Site, site_url: &str) -> anyhow::Result<()> {
-    let path = Path::new("target/web");
+    let path = Path::new(RENDER_DIR);
     create_dir_all(path)?;
     for note in site.notes.node_weights() {
         let title = if let Some(title) = &note.title {
@@ -417,7 +416,7 @@ fn render(site: &Site, site_url: &str) -> anyhow::Result<()> {
         };
         let rendered = format!(
             include_str!("page.html"),
-            site.render(note, site_url),
+            site.render(note, site_url)?,
             site_url = site_url,
             title = title,
             style = include_str!("style.css"),
