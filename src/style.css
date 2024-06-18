@@ -1,0 +1,79 @@
+/* */
+
+html,
+body {
+    overflow-x: clip;
+}
+
+body {
+    max-width: 1280px;
+    margin: 0 auto;
+    background: ghostwhite;
+    min-height: 100vh;
+    display: flex;
+    flex-flow: column;
+}
+
+.fira-sans-thin {
+    font-family: "Fira Sans", sans-serif;
+    font-weight: 100;
+    font-style: normal;
+}
+
+.note {
+    margin: 5px 3px;
+    border: 2px solid gray;
+    padding: 5px 10px;
+    border-radius: 20px;
+    position: relative;
+    font-family: Georgia, "Nimbus Roman No9 L", "Songti SC", "Noto Serif CJK SC", "Source Han Serif SC", "Source Han Serif CN", STSong, "AR PL New Sung", "AR PL SungtiL GB", NSimSun, SimSun, "TW\-Sung", "WenQuanYi Bitmap Song", "AR PL UMing CN", "AR PL UMing HK", "AR PL UMing TW", "AR PL UMing TW MBE", PMingLiU, MingLiU, serif;
+}
+
+@media (min-width: 768px) {
+    .note {
+        margin: 0.5em 1em;
+        padding: 1em 2em;
+        font-size: 1.2rem;
+    }
+}
+
+.note.current {
+    outline: 1px dashed;
+    outline-offset: -5px;
+    padding: calc(1em - 5px) calc(2em - 5px);
+}
+
+.note.child {
+    margin-left: 10px;
+}
+
+@media (min-width: 768px) {
+    .note.child {
+        margin-left: 2em;
+    }
+}
+
+.note-id {
+    position: absolute;
+    top: 1em;
+    right: 1em;
+}
+
+.note h1 {
+    margin: 0;
+}
+
+.note hr {
+    border-color: lightgray;
+}
+
+#footer {
+    margin-top: auto;
+    color: lightgray;
+    font-family:
+        ui-monospace, Menlo, Monaco, "Cascadia Mono", "Segoe UI Mono", "Roboto Mono", "Oxygen Mono", "Ubuntu Monospace", "Source Code Pro", "Fira Mono", "Droid Sans Mono", "Courier New",
+        -apple-system, "Noto Sans", "Helvetica Neue", Helvetica, "Nimbus Sans L", Arial, "Liberation Sans", "PingFang SC", "Hiragino Sans GB", "Noto Sans CJK SC", "Source Han Sans SC", "Source Han Sans CN", "Microsoft YaHei", "Wenquanyi Micro Hei", "WenQuanYi Zen Hei", "ST Heiti", SimHei, "WenQuanYi Zen Hei Sharp",
+        monospace;
+}
+
+/*

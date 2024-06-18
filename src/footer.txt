@@ -1,4 +1,0 @@
-<div id="footer">
-    <div>编译于{now}</div>
-    <div>调色板随机种子{seed:016x}</div>
-</div>

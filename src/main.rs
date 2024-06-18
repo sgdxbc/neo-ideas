@@ -234,7 +234,15 @@ impl Site {
     fn render_single(&self, note: &Note, current: bool) -> String {
         let background_hue = self.random_state.hash_one(note.id.to_string()) % 360;
 
-        let id = format!(r#"<div class="note-id"><small>#{}</small></div>"#, note.id);
+        let id = format!(
+            r#"<div class="note-id"><small>@{}{}</small></div>"#,
+            note.id,
+            if let Some(alternative) = &note.alternative {
+                format!(" ({alternative})")
+            } else {
+                Default::default()
+            }
+        );
         let title = if let Some(title) = &note.title {
             format!("<p><h1>{title}</h1></p>")
         } else {
@@ -400,117 +408,21 @@ fn update_note(site: &Site, key: &str) -> anyhow::Result<()> {
 
 fn render(site: &Site, site_url: &str) -> anyhow::Result<()> {
     let path = Path::new("target/web");
-    create_dir_all(&path)?;
+    create_dir_all(path)?;
     for note in site.notes.node_weights() {
         let title = if let Some(title) = &note.title {
             title
         } else {
             &format!("@{}", note.id)
         };
-        let style = r#"
-html, body {
-    overflow-x: clip;
-}
-body {
-    max-width: 1280px;
-    margin: 0 auto;
-    background: ghostwhite;
-    min-height: 100vh;
-    display: flex;
-    flex-flow: column;
-}
-.fira-sans-thin {
-    font-family: "Fira Sans", sans-serif;
-    font-weight: 100;
-    font-style: normal;
-}
-.note {
-    margin: 5px 10px;
-    border: 2px solid;
-    padding: 5px 10px;
-    border-radius: 20px;
-    position: relative;
-    font-family: Georgia, "Nimbus Roman No9 L", "Songti SC", "Noto Serif CJK SC", "Source Han Serif SC", "Source Han Serif CN", STSong, "AR PL New Sung", "AR PL SungtiL GB", NSimSun, SimSun, "TW\-Sung", "WenQuanYi Bitmap Song", "AR PL UMing CN", "AR PL UMing HK", "AR PL UMing TW", "AR PL UMing TW MBE", PMingLiU, MingLiU, serif;
-}
-@media (min-width: 768px) {
-    .note {
-        margin: 0.5em 1em;
-        padding: 1em 2em;
-        font-size: 1.2rem;
-    }
-}
-.note.current {
-    outline: 1px dashed;
-    outline-offset: -5px;
-    padding: calc(1em - 5px) calc(2em - 5px);
-}
-.note.child {
-    margin-left: 15px;
-    border-color: gray;
-}
-@media (min-width: 768px) {
-    .note.child {
-        margin: 2em;
-    }
-}
-.note-id {
-    position: absolute;
-    top: 1em;
-    right: 1em;
-}
-.note h1 {
-    margin: 0;
-}
-.note hr {
-    border-color: lightgray;
-}
-#footer {
-    margin-top: auto;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0 10px;
-    color: lightgray;
-    font-family: 
-        ui-monospace, Menlo, Monaco, "Cascadia Mono", "Segoe UI Mono", "Roboto Mono", "Oxygen Mono", "Ubuntu Monospace", "Source Code Pro","Fira Mono", "Droid Sans Mono", "Courier New", 
-        -apple-system, "Noto Sans", "Helvetica Neue", Helvetica, "Nimbus Sans L", Arial, "Liberation Sans", "PingFang SC", "Hiragino Sans GB", "Noto Sans CJK SC", "Source Han Sans SC", "Source Han Sans CN", "Microsoft YaHei", "Wenquanyi Micro Hei", "WenQuanYi Zen Hei", "ST Heiti", SimHei, "WenQuanYi Zen Hei Sharp",
-        monospace;
-}
-        "#;
-        let footer = format!(
-            include_str!("footer.txt"),
-            now = Utc::now(),
-            seed = site.random_state.hash_one(0)
-        );
         let rendered = format!(
-            r#"
-<html lang="zh-CN">
-<head>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta charset="UTF-8">
-    <title>{title} - NeoIdeas</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@100&display=swap" rel="stylesheet">
-    <style>{style}</style>
-</head>
-<body>
-    <a href="{site_url}/" class="fira-sans-thin" style="
-        position: sticky;
-        top: 0;
-        font-size: min(28vw, 20vh);
-        font-weight: 100;
-        align-self: flex-start;
-        color: inherit;
-        text-decoration: inherit;
-    ">
-        N<small>EO</small>I<small>DEAS</small>
-    </a>
-    {}
-    {footer}
-</body>
-</html>
-            "#,
-            site.render(note, site_url)
+            include_str!("page.html"),
+            site.render(note, site_url),
+            site_url = site_url,
+            title = title,
+            style = include_str!("style.css"),
+            now = Utc::now(),
+            seed = site.random_state.hash_one(0),
         );
         if let Some(alternative) = &note.alternative {
             let path = path.join(alternative);
