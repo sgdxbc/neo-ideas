@@ -1,5 +1,7 @@
 id
 1
+alternative
+ideas
 top level
 title
 提案
