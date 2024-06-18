@@ -1,0 +1,10 @@
+id
+43
+create
+2024-06-18T20:19:20.098141221+08:00
+update
+2024-06-18T20:40:37.113948397+08:00
+parent
+37
+
+The second design is to randomly distribute fragments i.e. intentionally to be not failure domain aware (maybe can call it failure domain agnostic). We make sure that each storage node is independently randomly sampled with identical distribution for fragments distribution. When there are sufficient large number of samplings i.e. fragments, the probability of the number of fragments sent to a certain failure domain will be a normal distribution whose expected value is determined solely by the size of the failure domain. In the other hand, it's highly unlikely that many fragments are independently sent to the same failure domain, even if we even know nothing about that failure domain.

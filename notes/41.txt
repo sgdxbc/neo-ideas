@@ -1,0 +1,10 @@
+id
+41
+create
+2024-06-18T20:03:29.840381140+08:00
+parent
+37
+
+The first design is to increase the number of fragments, and attempts to go beyond the maximum size of failure domains. If each failure domain contains at most 10 storage nodes, while we store 80 fragments for each object (and we can recover the object with any set of 24 fragments), then we can tolerate at least 6 independent failures even in the worse correlated case.
+
+The large number of fragments also enables tolerating temporal correlated failures. This is the common argument of the benefit of using large coding.

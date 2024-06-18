@@ -1,0 +1,8 @@
+id
+42
+create
+2024-06-18T20:14:06.378852757+08:00
+parent
+38
+
+There could be an alternative i.e. the FileCoin approach, which does not bother send fragments to different failure domains, but leveraging external incentive (in the form of penalty) to discourage the storage nodes to fail together (by discouraging each single storage node to fail). There are multiple ways to criticize, but at least we can say this approach essentially running away from the problem instead of directly solving it. Eventually there still need to be some solution to distribute fragments into sufficient amount of failure domains (which currently in FileCoin are probably still centralized solutions) to support the approach.

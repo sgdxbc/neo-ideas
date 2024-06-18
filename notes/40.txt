@@ -1,0 +1,12 @@
+id
+40
+create
+2024-06-18T19:54:23.920536110+08:00
+update
+2024-06-18T20:36:52.155991215+08:00
+parent
+37
+
+At this point we may additionally claim that the problem is actually trivial if not considering correlated failures. Suppose that among N storage nodes 1/3 of them are faulty. It's not necessary to store fragments of each object on N/3 + 1 nodes. We can simply store e.g. 10 fragments on different storage nodes, where any set of 5 fragments can recover the object. Since each storage node independently fails, we can calculate the interval T that the probability of 6 nodes consecutively fail within the T interval is negligible, and then design a storage protocol that can make at least one repair within T. It's easy to prove that such system ensures the durability of objects.
+
+This is not the case when there are correlated failures. So we have the following designs.

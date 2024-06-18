@@ -1,0 +1,12 @@
+id
+38
+create
+2024-06-18T19:38:46.316222843+08:00
+update
+2024-06-18T20:34:30.536657704+08:00
+parent
+37
+
+In a centralized system, the failure model may be presumed ahead of time, making the first step easier. However, in a trustless scenario, we cannot model the system into failure domains without trusting storage nodes in some way, and we probably don't want to do any explicit failure domain modeling anyway, because of the presence of adversarial attacks.
+
+Then we have a problem. How can we send fragments into sufficient amount of failure domains without knowing the failure domains?

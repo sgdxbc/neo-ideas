@@ -1,0 +1,10 @@
+id
+39
+create
+2024-06-18T19:49:43.749318325+08:00
+parent
+37
+
+Before solving the problem, we must first make one assumption to our system model: there indeed exist many failure domains, it just we can never know them (or as soon as we know/assume them, they will switch to the cases different from what we learned because of the constant churning or adversarial attacks).
+
+Otherwise, for example if every storage node belongs to single failure domain, then there's probably nothing we can do to prevent data loss when all the nodes fail (almost) at the same time, even if all of those nodes are honest.
