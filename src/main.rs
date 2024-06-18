@@ -183,6 +183,24 @@ impl Display for ConnectedNote {
     }
 }
 
+impl Note {
+    fn path(&self) -> String {
+        if let Some(alternative) = &self.alternative {
+            alternative.into()
+        } else {
+            self.id.to_string()
+        }
+    }
+
+    fn description(&self) -> String {
+        let mut s = format!("@{}", self.id);
+        if let Some(alternative) = &self.alternative {
+            write!(s, " ({alternative})").unwrap()
+        }
+        s
+    }
+}
+
 impl Site {
     fn new() -> Self {
         Self::default()
@@ -232,17 +250,12 @@ impl Site {
     fn render_single(&self, note: &Note, current: bool, site_url: &str) -> anyhow::Result<String> {
         let background_hue = self
             .random_state
-            .hash_one(self.random_state.hash_one(note.id))
-            % 360;
+            .hash_one(self.random_state.hash_one(note.id)) as f64
+            / u64::MAX as f64;
 
         let id = format!(
-            r#"<div class="note-id"><small>@{}{}</small></div>"#,
-            note.id,
-            if let Some(alternative) = &note.alternative {
-                format!(" ({alternative})")
-            } else {
-                Default::default()
-            }
+            r#"<div class="note-id sans-serif"><small>{}</small></div>"#,
+            note.description(),
         );
         let title = note
             .title
@@ -256,11 +269,38 @@ impl Site {
             .max()
             .map(|at| format!(" / {}", at.format_localized("%c %z", zh_CN)))
             .unwrap_or_default();
-        let metadata = format!(r#"<p class="metadata sans-serif">{create_at}{update_at}</p>"#);
+        let parent = if current {
+            self.notes
+                .edges_directed(self.note_indexes[&note.id], Incoming)
+                .find_map(|edge| {
+                    if matches!(edge.weight(), Connection::Own) {
+                        let parent = &self.notes[edge.source()];
+                        Some(format!(
+                            r#"<a href="{site_url}/{}"><p>上级卡片：{}</p></a>"#,
+                            parent.path(),
+                            parent.description(),
+                        ))
+                    } else {
+                        None
+                    }
+                })
+                .unwrap_or_default()
+        } else {
+            Default::default()
+        };
+        let metadata = format!(
+            r#"
+            <div class="metadata sans-serif">
+                <p>{create_at}{update_at}</p>
+                {parent}
+            </div>
+            "#
+        );
         let content = match &note.content {
             NoteContent::PlainText(paragraphs) => {
                 paragraphs.iter().fold(String::new(), |mut s, paragraph| {
-                    let _ = write!(s, "<p>{paragraph}</p>"); // clippy says i can ignore error
+                    // clippy says i can ignore error but i would be safer
+                    write!(s, "<p>{paragraph}</p>").unwrap();
                     s
                 })
             }
@@ -275,7 +315,7 @@ impl Site {
         };
         Ok(format!(
             r#"
-            <div class="note {}" style="background: hsl({background_hue} 100 99 / 0.8);">
+            <div class="note {}" style="background: hsl({background_hue}turn 100 99 / 0.8);">
                 {id}
                 {title}
                 {metadata}
@@ -303,15 +343,12 @@ impl Site {
         owned_indexes.sort_unstable_by_key(|index| self.notes[*index].create_at);
         for index in owned_indexes {
             let note = &self.notes[index];
-            rendered += &format!(
+            write!(
+                rendered,
                 r#"<a href={site_url}/{} style="color: inherit; text-decoration: inherit;">{}</a>"#,
-                if let Some(alternative) = &note.alternative {
-                    alternative.into()
-                } else {
-                    note.id.to_string()
-                },
-                self.render_single(note, false, site_url)?
-            )
+                note.path(),
+                self.render_single(note, false, site_url)?,
+            )?
         }
         Ok(rendered)
     }
