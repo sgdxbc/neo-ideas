@@ -134,6 +134,8 @@ body {
 .note .metadata p {
     color: gray;
     font-size: 95%;
+    line-height: 1em;
+    margin: 0.3em;
 }
 
 .note hr {
