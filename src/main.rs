@@ -256,7 +256,7 @@ impl Site {
             .map(|at| format!(" / {}", at.format_localized("%c %z", zh_CN)))
             .unwrap_or_default();
         let timestamps = format!(
-            r#"<p style="color: gray">{create_at}{update_at}</p>"#,
+            r#"<p class="metadata sans-serif">{create_at}{update_at}</p>"#,
             // note.create_at.to_rfc2822()
         );
         let style = format!(
