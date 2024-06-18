@@ -4,9 +4,11 @@ create
 2024-06-18T19:17:34.362200021+08:00
 update
 2024-06-18T20:33:37.155913622+08:00
+update
+2024-06-18T20:52:28.452873342+08:00
 parent
 1
 
 It takes two and only two steps to ensure durability in any storage system, either centralized or not: first, make sure each data object is stored into sufficient amount of failure domains; second, when failure happens repair in time.
 
-The second step is more of an engineering problem, and on its own it has nothing good to do without accomplishing the first step, so we focus on the first step for now. Formally speaking, the first step means we must send each fragment of the data object to different failure domains which fail independent to each other (for simplicity, not analyzing failure distribution for now).
+The second step is more of an engineering problem, and on its own it has nothing good to do without accomplishing the first step, so we focus on the first step for now. Formally speaking, the first step means we must send each fragment of the data object to different failure domains that fail independently to each other (for simplicity, not analyzing failure distribution for now).
