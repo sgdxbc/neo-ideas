@@ -74,6 +74,7 @@ impl FromStr for ConnectedNote {
         let mut parent_id = None;
         let mut previous_ids = Vec::new();
         let mut top_level = false;
+        let mut image = false;
 
         let mut lines = s.lines();
         while let Some(line) = lines.next() {
@@ -87,7 +88,7 @@ impl FromStr for ConnectedNote {
                     continue;
                 }
                 "image" => {
-                    // TODO
+                    image = true;
                     continue;
                 }
                 _ => {}
@@ -108,18 +109,28 @@ impl FromStr for ConnectedNote {
             }
         }
         // TODO type
-        let content = NoteContent::PlainText(
-            lines
-                .filter_map(|line| {
-                    let line = line.trim();
-                    if line.is_empty() {
-                        None
-                    } else {
-                        Some(line.into())
-                    }
-                })
-                .collect(),
-        );
+        let content = if image {
+            NoteContent::Image(
+                lines
+                    .next()
+                    .ok_or(anyhow::format_err!("missing image path"))?
+                    .trim()
+                    .into(),
+            )
+        } else {
+            NoteContent::PlainText(
+                lines
+                    .filter_map(|line| {
+                        let line = line.trim();
+                        if line.is_empty() {
+                            None
+                        } else {
+                            Some(line.into())
+                        }
+                    })
+                    .collect(),
+            )
+        };
         let note = Note {
             id: id.ok_or(anyhow::format_err!("missing `id` record"))?,
             alternative,
@@ -313,17 +324,33 @@ impl Site {
                 format!(r#"<img src="{site_url}/{}">"#, path.display())
             }
         };
+        let mut owned = Default::default();
+        if !current {
+            let owned_count = self
+                .notes
+                .edges(self.note_indexes[&note.id])
+                .filter(|edge| matches!(edge.weight(), Connection::Own))
+                .count();
+            if owned_count != 0 {
+                owned = format!(include_str!("card_owned.html"), owned_count = owned_count);
+            }
+        }
         Ok(format!(
             r#"
-            <div class="note {}" style="background: hsl({background_hue}turn 100% 99% / .8);">
+            <div class="note {} {}" style="background: hsl({background_hue}turn 100% 99% / .8);">
                 {id}
                 {title}
                 {metadata}
                 <hr>
                 {content}
             </div>
+            {owned}
             "#,
-            if current { "current" } else { "child" }
+            if current { "current" } else { "child" },
+            match &note.content {
+                NoteContent::PlainText(_) => "text",
+                NoteContent::Image(_) => "image",
+            }
         ))
     }
 
@@ -367,6 +394,9 @@ fn index() -> anyhow::Result<Site> {
     let mut note_previous = HashMap::new();
     for entry in read_dir {
         let path = entry?.path();
+        if !(path.is_file() && path.extension() == Some("txt".as_ref())) {
+            continue;
+        }
         let note = read_to_string(path)?.parse::<ConnectedNote>()?;
         let note_id = note.id;
         let index = site.notes.add_node(note.inner);

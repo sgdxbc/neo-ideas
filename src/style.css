@@ -88,7 +88,6 @@ body {
     transform: translate3d(0, 0, 1px);
     margin: 0.5em 1em;
     border: 2px solid gray;
-    padding: 1em 2em;
     border-radius: 20px;
     position: relative;
     font-family: Georgia, "Nimbus Roman No9 L", "Songti SC", "Noto Serif CJK SC", "Source Han Serif SC", "Source Han Serif CN", STSong, "AR PL New Sung", "AR PL SungtiL GB", NSimSun, SimSun, "TW\-Sung", "WenQuanYi Bitmap Song", "AR PL UMing CN", "AR PL UMing HK", "AR PL UMing TW", "AR PL UMing TW MBE", PMingLiU, MingLiU, serif;
@@ -97,27 +96,19 @@ body {
 .note.current {
     outline: 1px dashed;
     outline-offset: -5px;
-    padding: calc(1em - 5px) calc(2em - 5px);
-}
-
-@media (max-width: 768px) {
-    .note {
-        margin: 0.5em 0.1em;
-        padding: 1em 0.5em;
-    }
-    .note.current {
-        padding: 1em 0.5em;
-    }
 }
 
 .note.child {
-    margin-left: 10px;
+    margin-left: 2em;
 }
 
-@media (min-width: 768px) {
-    .note.child {
-        margin-left: 2em;
-    }
+.note h1, .note .metadata, .note hr {
+    /* margin: calc(1em - 5px) calc(2em - 5px); */
+    margin: 1rem 2rem;
+}
+
+.note .metadata p {
+    margin: 0;
 }
 
 .note h1 {
@@ -135,7 +126,6 @@ body {
     color: gray;
     font-size: 95%;
     line-height: 1em;
-    margin: 0.3em;
 }
 
 .note hr {
@@ -146,14 +136,46 @@ body {
 }
 
 .note p {
-    margin: 0.7em 0;
+    margin: 0.7rem 2rem;
     font-size: 1.1em;
     color: hsl(none none 25%);
 }
 
+.note.image img {
+    border-bottom-left-radius: 20px;
+    border-bottom-right-radius: 20px;
+}
+
+.note.current.image img {
+    margin: auto 3px 3px 3px;
+    max-width: calc(100% - 6px);
+}
+
+.note-level2 {
+    margin: -0.5em 0 0.5em calc(2em + 20px);
+    color: gray;
+}
+
 @media (max-width: 768px) {
+    .note {
+        margin: 0.5em 0.1em;
+    }
+
+    .note h1, .note .metadata, .note hr {
+        margin: 1rem 0.5rem;
+    }
+
+    .note.child {
+        margin-left: 1em;
+    }
+
     .note p {
+        margin: 0.7rem 0.5rem;
         font-size: 1em;
+    }
+
+    .note-level2 {
+        margin: -0.5em 0 1em calc(1em + 20px);
     }
 }
 
