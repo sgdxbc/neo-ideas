@@ -142,10 +142,17 @@ body {
     font-size: 1.1em;
 }
 
+@media (max-width: 768px) {
+    .note p {
+        font-size: 1em;
+    }
+}
+
 #footer {
     margin-top: auto;
     color: lightgray;
     font-size: 0.8em;
+    line-height: 1.2;
 }
 
 /*

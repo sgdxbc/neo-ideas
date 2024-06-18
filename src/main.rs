@@ -230,7 +230,10 @@ impl Site {
     }
 
     fn render_single(&self, note: &Note, current: bool, site_url: &str) -> anyhow::Result<String> {
-        let background_hue = self.random_state.hash_one(note.id.to_string()) % 360;
+        let background_hue = self
+            .random_state
+            .hash_one(self.random_state.hash_one(note.id))
+            % 360;
 
         let id = format!(
             r#"<div class="note-id"><small>@{}{}</small></div>"#,
@@ -421,7 +424,7 @@ fn render(site: &Site, site_url: &str) -> anyhow::Result<()> {
             title = title,
             style = include_str!("style.css"),
             now = Utc::now(),
-            seed = site.random_state.hash_one(0),
+            seed = site.random_state.hash_one(0u64),
         );
         if let Some(alternative) = &note.alternative {
             let path = path.join(alternative);
