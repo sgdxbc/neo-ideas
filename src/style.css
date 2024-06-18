@@ -84,6 +84,8 @@ body {
 
 .note {
     z-index: 1;
+    -webkit-transform: translate3d(0, 0, 1px);
+    transform: translate3d(0, 0, 1px);
     margin: 0.5em 1em;
     border: 2px solid gray;
     padding: 1em 2em;
