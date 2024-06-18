@@ -83,6 +83,7 @@ body {
 }
 
 .note {
+    z-index: 1;
     margin: 0.5em 1em;
     border: 2px solid gray;
     padding: 1em 2em;
