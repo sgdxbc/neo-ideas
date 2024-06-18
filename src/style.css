@@ -131,18 +131,22 @@ body {
     right: 1em;
 }
 
-.note .metadata {
+.note .metadata p {
     color: gray;
     font-size: 95%;
 }
 
 .note hr {
-    border-color: lightgray;
+    border-top: thin solid lightgray;
+    border-right: none;
+    border-bottom: none;
+    border-left: none;
 }
 
 .note p {
     margin: 0.7em 0;
     font-size: 1.1em;
+    color: hsl(none none 25%);
 }
 
 @media (max-width: 768px) {
