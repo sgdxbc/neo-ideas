@@ -1,0 +1,8 @@
+id
+45
+create
+2024-06-19T09:47:20.287448669+08:00
+parent
+1
+
+Regarding the motivation of a researching on durable cooperative storage system. In another word why it is necessary to perform such researching at these days after 20 years of no active researching.

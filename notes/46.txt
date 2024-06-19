@@ -1,0 +1,10 @@
+id
+46
+create
+2024-06-19T09:50:18.661409863+08:00
+parent
+45
+
+The prior researching trend was about performance/capability. Individual machines/storage nodes use to be weak, with insufficient network bandwidth and storage capacity to serve all data objects to all users. That is not the case anymore for long. Individual datacenters nowadays are so strong that they no longer need to collaborate for seeking more powerful storage services. 
+
+Given this fact, a cooperative system design is not longer a performance advantage but becoming disadvantage, because of the overhead of cooperation. That is why the researching has been inactive for a while, and the interests have been switched to improving performance of individual datacenters.

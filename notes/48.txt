@@ -1,0 +1,8 @@
+id
+48
+create
+2024-06-19T10:43:19.664751719+08:00
+parent
+45
+
+In this work we make strict definitions on the assumptions in order to apply our system. We argue that although the old works take a cooperative approach that comes with inherent potential security, they are not specifically designed for security (but performance), so in some sense they are not trusting no one, but trusting everyone. We show that those works suffer from data loss under certain correlated failure pattern, which will happen in a real world system especially when there are adversarial attacks. To our best knowledge our work is the first one that ensures durability without trusting any participant.
