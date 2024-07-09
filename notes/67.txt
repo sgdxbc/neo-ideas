@@ -1,0 +1,12 @@
+id
+67
+title
+Sky Inference
+create
+2024-07-09T12:02:43.156735636+08:00
+parent
+1
+
+The sky computing initiation proposes a broker service for the cloud infrastructures. The consideration is mostly around cost efficiency: broken is responsible to orchestrate user task on the clouds, potentially across multiple clouds, to minimize operation cost while meet customized requirements.
+
+We know have much more inference service providers than cloud computing platforms. It's time to arbitrage among them.

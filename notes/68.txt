@@ -1,0 +1,12 @@
+id
+68
+create
+2024-07-09T12:10:22.815474509+08:00
+parent
+67
+
+Users are already behaving as brokers by themselves. They generate image descriptions interactively, then feed the descriptions into text to image models. They are creating tiny ad hoc workflows.
+
+The GPT is a gating expert model which includes a meta model as broker. There are other models driven external tools e.g. Wolfram Alpha or other models to solve the tasks.
+
+The orchestration i.e. "divide and conquer" part is nothing particular new to what sky computing already proposed. The Pandora box is the subjectivity in the user experience.

@@ -1,0 +1,14 @@
+id
+69
+create
+2024-07-09T12:19:31.280233178+08:00
+parent
+67
+
+Before thinking about how broker pick the most cost efficient inference service to fulfill the requirements, take a while on how users specify the requirements. Are they really specifying?
+
+There are ranking solutions for the models, but users hardly say "give me response which is ranked >= 42.42" or something.
+
+The demand itself is inherently subjective. The broker will then have to interpret it subjectively. To formally define the goal here is the novelty.
+
+We could start with something more automated. Something more akin to what sky computing is for, and gradually move to the interactive scenarios.
