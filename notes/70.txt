@@ -1,0 +1,10 @@
+id
+70
+create
+2024-07-10T12:41:17.702205001+08:00
+parent
+1
+
+Client server (CS) is good for availability. Not only the availability is in fact good, but also the paradigm makes it easier to engineer for availability: just focus on the server side. A broken client cannot affect the availability experienced by the other clients.
+
+P2P is good for everything but availability. Not only the availability is in fact bad, but also the paradigm makes it, well, impossible to engineer. The difference lies on who can contact who: if everyone can (potentially) contact everyone, it's infeasible to guarantee all contacting end up well. Then the availability depends on whether peer would perform <em>join</em> or <em>select</em> among the partially broken contacts. Select is usually unaffected (as long as you are lucky), but join is probably horrible. Join is unavoidable for some cases because nontrivial applications are stateful.

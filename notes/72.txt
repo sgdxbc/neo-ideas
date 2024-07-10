@@ -1,0 +1,10 @@
+id
+72
+create
+2024-07-10T13:01:35.381185162+08:00
+parent
+70
+
+This sounds a lot like a half baked hole punching/tunneling. I emphasize that I am not (re)inventing some technologies; this proposal is not about technologies, but programming paradigm. The purpose of those transportation protocols are to keep the asymmetrical networking transparent to the programmers. You just go through a weird and complicated establishment so that you "can" establish channels to everyone you know. I would argue that is the wrong abstraction, the seemingly promising illusion doesn't feel virtual. There are a lot of evidences that people already break the encapsulation and directly workaround its defects. And I'm following that trend to speak out that the transparency is a lie.
+
+Instead, what I believe to be a more justified abstraction is that everyone can own a mailbox. Sometimes you get a chance to "upgrade" into a direct channel, but it's always safe to program against mailboxes. A more complex but predictable/controllable programming model.

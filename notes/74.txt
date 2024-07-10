@@ -1,0 +1,10 @@
+id
+74
+create
+2024-07-10T13:28:18.490180799+08:00
+parent
+70
+
+The closing thought is on the next phase of the solution. We are still assuming a P2P like peer centric communication pattern. What if mailboxes are not belonged to real peers but some sorts of services? If the service is collaboratively provided by some peers, and everyone of them can pop messages from the mailbox, the mailbox is more like a MPMC message queue.
+
+Or with the other semantic, it becomes a pubsub topic. But those are general building blocks, while I am imagining about the network model itself. If peer mailboxes are replacing all point to point channels, then service mailboxes will replace more.

@@ -1,0 +1,14 @@
+id
+73
+create
+2024-07-10T13:16:35.822642519+08:00
+parent
+70
+
+There are something to design for setting up decent mailboxes, but that heavily repeats the hole punching/tunneling ideas and there's no much novelty. I would instead focus on proving that P2P applications are mostly programmable with mailboxes.
+
+This leads to the necessity of more contributions. For example we immediately have problem in Kademlia: it uses a request response message pattern which obviously assuming synchronous channels, and asynchronous polling would completely destroy the user experience.
+
+The solution may be caching, which is more like "automatic replies" in our mailbox analogy. If we persist to keep our solution general, agnostic to the structural states of specific applications, (and more importantly, avoid offloading computations to mailbox providers,) then we can cache some query replies to famous peer ID/CID in the mailbox. And it's safe to fallback to "I have no idea about your query" for large ranges of IDs in Kademlia. But these are just preliminary.
+
+The alternative solution may be informing sender about the next time when the receiver is expected to check for mailbox. Only leaving query requests to those receivers that will come back soon. But again this is also preliminary.

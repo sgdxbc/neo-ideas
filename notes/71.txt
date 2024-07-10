@@ -1,0 +1,14 @@
+id
+71
+create
+2024-07-10T12:50:15.104504747+08:00
+parent
+70
+
+Roadmap of bringing availability to P2P world.
+
+The design is probably going to be boring hybrid. For the first phase we may focus on the connectivity i.e. makes all contacting likely to success. We have no magic to assign everyone public IP so the only choice is to disallow the contacts that are unlikely to success. Everyone behind NAT are forced to behave as clients and communicate in the CS way. Many systems are already doing this to some extent.
+
+What if we want to actively dial someone behind NAT? My proposal is a mailbox mechanism. Leave a message for it to some third party "server", who is periodically polled against by the receiver. If we are publicly connectable, later the receiver may reversely contact us; otherwise the communication continues with dual mailboxes.
+
+Somehow like back to the age before server sent events was invented. Oh wow wiki says that was 2006.
