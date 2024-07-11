@@ -5,6 +5,7 @@ use std::{
     fs::{copy, create_dir_all, read_dir, read_to_string, write},
     hash::{BuildHasher, RandomState},
     io::ErrorKind,
+    iter::from_fn,
     path::{Path, PathBuf},
     str::FromStr,
 };
@@ -119,16 +120,18 @@ impl FromStr for ConnectedNote {
             )
         } else {
             NoteContent::PlainText(
-                lines
-                    .filter_map(|line| {
-                        let line = line.trim();
-                        if line.is_empty() {
-                            None
-                        } else {
-                            Some(line.into())
-                        }
-                    })
-                    .collect(),
+                from_fn(move || {
+                    let Some(first_line) = lines.next() else {
+                        return None;
+                    };
+                    let mut lines = lines
+                        .by_ref()
+                        .take_while(|line| !line.trim().is_empty())
+                        .collect::<Vec<_>>();
+                    lines.insert(0, first_line);
+                    Some(lines.join("\n"))
+                })
+                .collect(),
             )
         };
         let note = Note {

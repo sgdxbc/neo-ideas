@@ -1,0 +1,22 @@
+id
+75
+title
+Serverless Fortune
+create
+2024-07-11T10:57:40.089080120+08:00
+parent
+1
+
+<q>
+<code>fortune</code> is a program that displays a pseudorandom message from a database of quotations.
+</q>
+
+如果我想让我的某张卡片的内容是「一则fortune输出」，那么作为静态站的传统方案是整个fortune数据库传到前端，然后随机采样一则。这显然太重了。
+
+如果引入一个serverless服务。fortune应该属于是serverless界的hello world样例。对于跑docker的平台，在镜像里装好fortune然后把输入输出重定向好，代码已经几乎完全脑补出来了。
+
+不过也有办法不用serverless。把fortune数据库以每则输出一个文件的形式存下来，然后前端先采样，再根据采样结果请求对应的文件。
+
+坏处就是必须要发起两次请求，一次加载业务逻辑，一次加载数据。
+
+这是否能够成为一种通用思路，将serverless服务offload到端侧？是否可以提供一种无感知的编程模型，由编译器自动划分任务分工？尽量多的在端侧计算的同时尽量少的round trip？
