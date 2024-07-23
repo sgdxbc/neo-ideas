@@ -9,4 +9,4 @@ Head of line blocking is usually discussed on the consumer side, and the discuss
 
 We can have the dual definition of HoL blocking on the producer side, referring to the case where producing one item takes too long that the production of all the following items are delayed.
 
-And it's affection is about throughput. The consumer is idle when the producer is blocking, reduce the utilization of consumer, eventually lead to lower overall throughput. This is to the opposite of consumer HoL blocking, where throughput is not affected because consumer is 100% utilized no matter the order of consumption.
+And its affection is on throughput. The consumer is idle when the producer is blocking, reduce the utilization of consumer, eventually lead to lower overall throughput. This is to the opposite of consumer HoL blocking, where throughput is not affected because consumer is 100% utilized no matter the order of consumption.
