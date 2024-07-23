@@ -1,0 +1,10 @@
+id
+86
+create
+2024-07-23T09:45:53.364251177+08:00
+parent
+85
+
+The good thing of this is that the solutions for consumers are reusable. After all, in pipelined systems, the consumer of predecessor stage is also the producer of successor stage, so solve the HoL on it solves two at once.
+
+Instead of a new field of problems to be solved, this is more like an observable of how old solutions can be useful in more scenarios. Or maybe they are already effective just people haven't been (enough) aware of it.
